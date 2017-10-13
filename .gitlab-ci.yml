@@ -1,0 +1,49 @@
+before_script:
+ - php -v
+ - pwd
+ - /usr/local/bin/composer require phplint/phplint
+ - /usr/local/bin/composer require squizlabs/php_codesniffer
+ - /usr/local/bin/composer require 'sebastian/phpdcd=*'
+ - /usr/local/bin/composer require "pdepend/pdepend:@stable"
+ - /usr/local/bin/composer require phploc/phploc
+ - /usr/local/bin/composer require "phpmd/phpmd:@stable"
+ - /usr/local/bin/composer install
+stages:  
+  - syntax
+
+job_syntax:  
+  stage: syntax
+  script:
+    - echo "Syntax checking PHP files"
+    - echo "For more information http://www.icosaedro.it/phplint/"
+    - vendor/bin/phplint ./ --exclude "vendor"
+  
+    - echo "Check the PHP Standard Recommendation 2 - PSR2 coding standards"
+    - echo "For more information http://www.php-fig.org/psr/psr-2/"
+    - vendor/bin/phpcs ./ --standard=PSR2 --extensions=php --colors --ignore=vendor/*
+    
+    - echo "Performs the Dead Code Detector (DCD) for PHP code"
+    - echo "For more information https://github.com/sebastianbergmann/phpdcd"
+    - vendor/bin/phpdcd --exclude=vendor ./
+
+    - echo "Automatically performs the static code analysis"
+    - echo "For more information http://pdepend.org/documentation/what-is-php-depend.html"
+    - mkdir -p docs/pdepend
+    - vendor/bin/pdepend --summary-xml=docs/pdepend/summary.xml 
+                         --jdepend-chart=docs/pdepend/chart.svg 
+                         --overview-pyramid=docs/pdepend/pyramid.svg 
+                         --ignore=vendor 
+                         --suffix=php .    
+    
+    - echo "Measuring the size and analyzing the structure of this project"
+    - echo "For more information https://github.com/sebastianbergmann/phploc"
+    - vendor/bin/phploc --count-tests --exclude=vendor . 
+    
+    - echo "Checking PHP source code for potential problems"
+    - echo "For more information http://phpmd.org/"
+    - vendor/bin/phpmd . html codesize,unusedcode,naming,design,cleancode,controversial 
+                           --reportfile docs/phpmd.html
+                           --exclude vendor/
+                           --suffixes php
+
+  allow_failure: true

@@ -1,0 +1,10 @@
+stages:
+  - build
+  - test
+  - deploy
+job_deploy_master:
+  stage: deploy
+  script:
+  - echo "Starting Deploy"
+  - /home/gitlab-runner/bin/deploy.sh root test
+  - echo "End Deploy"
